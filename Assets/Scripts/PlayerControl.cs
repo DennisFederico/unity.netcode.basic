@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Unity.Netcode;
 using UnityEngine.InputSystem;
+using Unity.Netcode.Components;
+using Dennis.Unity.Utils.Loggers;
 
 public class PlayerControl : NetworkBehaviour
 {
@@ -31,8 +33,16 @@ public class PlayerControl : NetworkBehaviour
     [SerializeField]
     private NetworkVariable<PlayerAnimationState> networkPlayerAnimationState = new();
 
+    private NetworkTransform networkTrasform;
+    private NetworkObject networkObject;
     private CharacterController characterController;
     private Animator animator;
+
+    //Lambda to check the Authority (usually only the server can commit to the transform / has authority)
+    private bool HasAuthority => networkTrasform.CanCommitToTransform;
+    private bool hasAuthority;
+    private bool IsTransformOwner => networkTrasform.IsOwner;
+    private bool isTransformOwner;
 
     // client caching
     private Vector3 oldPositionVector;
@@ -43,6 +53,9 @@ public class PlayerControl : NetworkBehaviour
     {
         characterController = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
+        networkTrasform = GetComponent<NetworkTransform>();
+        networkObject = GetComponent<NetworkObject>();
+
     }
 
     private void Start()
@@ -56,17 +69,25 @@ public class PlayerControl : NetworkBehaviour
 
     }
 
-    private void OnMove(InputValue moveValue)
-    {
-        if (IsClient && IsOwner)
-        {
-            movementInput = moveValue.Get<Vector2>();
-        }
+    public override void OnNetworkSpawn() {
+        isTransformOwner = IsTransformOwner;
+        hasAuthority = HasAuthority;        
     }
+
+    // private void OnMove(InputValue moveValue)
+    // {
+    //     if (IsClient && IsOwner)
+    //     {
+    //         movementInput = moveValue.Get<Vector2>();
+    //     }
+    // }
 
     private void Update()
     {
-        
+        // if (Input.GetKey("j")) {
+        //     // These are the real ones that evaluate to true for the player/owner LocalTransform:{isTransformLocal}, OwnerOfTransform:{isTransformOwner}, OwnerOfObject:{networkObject.IsOwner}
+        //     UILogger.Instance.LogWarning($"ID:{networkObject.NetworkObjectId}, ObjClientId:{networkObject.OwnerClientId}, ClientId:{NetworkManager.LocalClientId},Authority:{hasAuthority}, LocalTransform:{isTransformLocal}, OwnerOfTransform:{isTransformOwner}, OwnerOfObject:{networkObject.IsOwner}, ObjectOfPlayer:{networkObject.IsPlayerObject}");
+        // }
         if (IsClient && IsOwner)
         {
             ClientInput();

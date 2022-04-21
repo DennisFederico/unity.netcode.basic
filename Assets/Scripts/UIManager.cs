@@ -18,10 +18,15 @@ public class UIManager : MonoBehaviour
     private Button StartClientBtn;
 
     [SerializeField]
+    private Button TestPhysicsBtn;
+
+    [SerializeField]
     private TMP_Text PlayerCounterText;
 
     [SerializeField]
     private TMP_InputField PlayerNameInput;
+
+    private bool hasServerStarted = false;
 
     private void Awake()
     {
@@ -65,6 +70,14 @@ public class UIManager : MonoBehaviour
             {
                 UILogger.Instance.LogError("Cannot Start Client!");
             }
+        });
+
+        NetworkManager.Singleton.OnServerStarted += () => hasServerStarted = true;
+
+        TestPhysicsBtn.onClick.AddListener(() =>
+        {
+            if (hasServerStarted) SpawnManager.Instance.SpawnBalls();
+            else UILogger.Instance.LogWarning("The Server has not Started yet!!");
         });
     }
 
