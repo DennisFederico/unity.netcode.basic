@@ -21,6 +21,9 @@ public class UIManager : MonoBehaviour
     private Button TestPhysicsBtn;
 
     [SerializeField]
+    private TMP_InputField JoinCodeInput;
+
+    [SerializeField]
     private TMP_Text PlayerCounterText;
 
     [SerializeField]
@@ -36,8 +39,14 @@ public class UIManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        StartHostBtn.onClick.AddListener(() =>
-        {
+        StartHostBtn.onClick.AddListener(async () =>
+        {            
+            if (RelayManager.Instance.IsRelayEnabled) {            
+                RelayHostData data;
+                data = await RelayManager.Instance.SetupRelay();
+                JoinCodeInput.text = data.JoinCode;
+            }
+
             if (NetworkManager.Singleton.StartHost())
             {
                 UILogger.Instance.LogInfo("Host Started!");
@@ -60,8 +69,12 @@ public class UIManager : MonoBehaviour
             }
         });
 
-        StartClientBtn.onClick.AddListener(() =>
+        StartClientBtn.onClick.AddListener(async () =>
         {
+
+            if (RelayManager.Instance.IsRelayEnabled && !string.IsNullOrEmpty(JoinCodeInput.text))
+                await RelayManager.Instance.JoinRelay(JoinCodeInput.text);
+
             if (NetworkManager.Singleton.StartClient())
             {
                 UILogger.Instance.LogInfo("Client Started!");

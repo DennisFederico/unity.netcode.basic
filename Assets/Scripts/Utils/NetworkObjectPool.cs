@@ -6,7 +6,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace Netcode.Extensions
+namespace Dennis.Netcode.Extensions
 {
     public class NetworkObjectPool : Singleton<NetworkObjectPool>
     {

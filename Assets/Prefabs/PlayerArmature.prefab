@@ -1105,7 +1105,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3893294197879345259}
   - component: {fileID: 4868881022722625143}
-  - component: {fileID: 3645942834793642606}
+  - component: {fileID: -2815964180017754515}
   - component: {fileID: 7985907603147201565}
   - component: {fileID: 6982812146204527121}
   - component: {fileID: 3945945840078806673}
@@ -1154,7 +1154,7 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &3645942834793642606
+--- !u!114 &-2815964180017754515
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1179,7 +1179,7 @@ MonoBehaviour:
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
   InLocalSpace: 0
-  Interpolate: 0
+  Interpolate: 1
 --- !u!143 &7985907603147201565
 CharacterController:
   m_ObjectHideFlags: 0
