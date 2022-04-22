@@ -125,12 +125,12 @@ public class PlayerControl : NetworkBehaviour
     private void ClientMoveAndRotate()
     {
         if (networkPosition.Value != Vector3.zero) {
-            //characterController.SimpleMove(networkPosition.Value);
-            characterController.SimpleMove(oldPositionVector * walkSpeed);
+            characterController.SimpleMove(networkPosition.Value);
+            //characterController.SimpleMove(oldPositionVector * walkSpeed);
         }
         if (networkRotation.Value != Vector3.zero) {
-            //transform.Rotate(networkRotation.Value);
-            transform.Rotate(oldRotationVector * rotationSpeed);
+            transform.Rotate(networkRotation.Value);
+            //transform.Rotate(oldRotationVector * rotationSpeed);
         }
     }
 
