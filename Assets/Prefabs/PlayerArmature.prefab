@@ -1111,7 +1111,7 @@ GameObject:
   - component: {fileID: 3945945840078806673}
   - component: {fileID: 185829505673133547}
   - component: {fileID: 5230697672737500289}
-  m_Layer: 8
+  m_Layer: 6
   m_Name: PlayerArmature
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -1207,7 +1207,7 @@ Animator:
   m_GameObject: {fileID: 4416926081852918481}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 36078ab0369161e49a29d349ae3e0739, type: 3}
-  m_Controller: {fileID: 9100000, guid: 542315d999e98c04fad4243bc16630c7, type: 2}
+  m_Controller: {fileID: 9100000, guid: 7a03d0ef273a2964086060933124ce21, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -1256,9 +1256,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   walkSpeed: 2
   rotationSpeed: 2
+  runSpeedOffset: 2
   startingPositionRange: {x: -4, y: 4}
   networkPlayerAnimationState:
     m_InternalValue: 0
+  networkPlayerHealth:
+    m_InternalValue: 100
+  networkPlayerPunchBlend:
+    m_InternalValue: 0
+  lefHand: {fileID: 9029242941628065318}
+  rightHand: {fileID: 5403032428067713898}
+  minPunchDistance: 0.25
 --- !u!1 &4523139366846529165
 GameObject:
   m_ObjectHideFlags: 0
