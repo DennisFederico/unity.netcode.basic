@@ -20,7 +20,7 @@ namespace Dennis.Netcode.Extensions
 
         Dictionary<GameObject, Queue<NetworkObject>> pooledObjects = new Dictionary<GameObject, Queue<NetworkObject>>();
 
-        public void Awake()
+        public void TriggerInitializePool()
         {
             InitializePool();
         }

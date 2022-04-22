@@ -4,7 +4,10 @@ using Unity.Netcode;
 using UnityEngine.InputSystem;
 using Unity.Netcode.Components;
 using Dennis.Unity.Utils.Loggers;
+using Unity.Netcode.Samples;
 
+[RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(ClientNetworkTransform))]
 public class PlayerControl : NetworkBehaviour
 {
 
@@ -12,6 +15,7 @@ public class PlayerControl : NetworkBehaviour
     {
         Idle,
         Walk,
+        Run,
         ReverseWalk
     }
 
@@ -22,40 +26,25 @@ public class PlayerControl : NetworkBehaviour
     private float rotationSpeed = 3.5f;
 
     [SerializeField]
+    private float runSpeedOffset = 2.0f;
+
+
+    [SerializeField]
     private Vector2 startingPositionRange = new(-4, 4);
-
-    [SerializeField]
-    private NetworkVariable<Vector3> networkPosition = new();
-
-    [SerializeField]
-    private NetworkVariable<Vector3> networkRotation = new();
 
     [SerializeField]
     private NetworkVariable<PlayerAnimationState> networkPlayerAnimationState = new();
 
-    private NetworkTransform networkTrasform;
-    private NetworkObject networkObject;
     private CharacterController characterController;
     private Animator animator;
 
-    //Lambda to check the Authority (usually only the server can commit to the transform / has authority)
-    private bool HasAuthority => networkTrasform.CanCommitToTransform;
-    private bool hasAuthority;
-    private bool IsTransformOwner => networkTrasform.IsOwner;
-    private bool isTransformOwner;
-
-    // client caching
-    private Vector3 oldPositionVector;
-    private Vector3 oldRotationVector;
-    private Vector2 movementInput;
+    Vector3 inputPositionVector;
+    Vector3 inputRotationVector;
 
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
-        networkTrasform = GetComponent<NetworkTransform>();
-        networkObject = GetComponent<NetworkObject>();
-
     }
 
     private void Start()
@@ -65,97 +54,77 @@ public class PlayerControl : NetworkBehaviour
             transform.position = new Vector3(Random.Range(startingPositionRange.x, startingPositionRange.y),
                                              0,
                                              Random.Range(startingPositionRange.x, startingPositionRange.y));
+            PlayerCameraFollow.Instance.AttachTo(transform.Find("PlayerCameraRoot"));
         }
 
     }
 
-    public override void OnNetworkSpawn() {
-        isTransformOwner = IsTransformOwner;
-        hasAuthority = HasAuthority;        
-    }
-
-    // private void OnMove(InputValue moveValue)
-    // {
-    //     if (IsClient && IsOwner)
-    //     {
-    //         movementInput = moveValue.Get<Vector2>();
-    //     }
-    // }
-
     private void Update()
     {
-        // if (Input.GetKey("j")) {
-        //     // These are the real ones that evaluate to true for the player/owner LocalTransform:{isTransformLocal}, OwnerOfTransform:{isTransformOwner}, OwnerOfObject:{networkObject.IsOwner}
-        //     UILogger.Instance.LogWarning($"ID:{networkObject.NetworkObjectId}, ObjClientId:{networkObject.OwnerClientId}, ClientId:{NetworkManager.LocalClientId},Authority:{hasAuthority}, LocalTransform:{isTransformLocal}, OwnerOfTransform:{isTransformOwner}, OwnerOfObject:{networkObject.IsOwner}, ObjectOfPlayer:{networkObject.IsPlayerObject}");
-        // }
         if (IsClient && IsOwner)
         {
             ClientInput();
         }
-        ClientMoveAndRotate();
         ClientVisuals();
     }
 
     private void ClientInput()
     {
-        Vector3 rotationVector = new(0, Input.GetAxis("Horizontal"), 0);
-        // Where is the player looking at?
+        // y axis client rotation
+        inputRotationVector = new Vector3(0, Input.GetAxis("Horizontal"), 0) * rotationSpeed;
+
+        // forward & backward direction
         Vector3 direction = transform.TransformDirection(Vector3.forward);
-        float forwardValue = Input.GetAxis("Vertical");
-        Vector3 positionVector = direction * forwardValue;
+        float forwardInput = Input.GetAxis("Vertical");
+        forwardInput = (Input.GetKey(KeyCode.LeftShift) && forwardInput > 0) ? 2f : forwardInput;
 
-        //Only send changes
-        if (positionVector != oldPositionVector || rotationVector != oldRotationVector) {
-            oldPositionVector = positionVector;
-            oldRotationVector = rotationVector;
-            UpdateClientPositionServerRpc(positionVector * walkSpeed, rotationVector * rotationSpeed);
-        }
+        inputPositionVector = direction * forwardInput * walkSpeed;
 
-        if (forwardValue > 0) {
+        // Client is responsible for moving itself
+        if (forwardInput > 0 && forwardInput <= 1)
+        {
             UpdatePlayerAnimationStateServerRpc(PlayerAnimationState.Walk);
         }
-        else if (forwardValue == 0) {
+        else if (forwardInput > 1)
+        {
+            UpdatePlayerAnimationStateServerRpc(PlayerAnimationState.Run);
+            inputPositionVector *= runSpeedOffset;
+        }
+        else if (forwardInput < 0)
+        {
+            UpdatePlayerAnimationStateServerRpc(PlayerAnimationState.ReverseWalk);
+        }
+        else
+        {
             UpdatePlayerAnimationStateServerRpc(PlayerAnimationState.Idle);
         }
-        else {
-            UpdatePlayerAnimationStateServerRpc(PlayerAnimationState.ReverseWalk);
-        }        
-    }
 
-    private void ClientMoveAndRotate()
-    {
-        if (networkPosition.Value != Vector3.zero) {
-            characterController.SimpleMove(networkPosition.Value);
-        }
-        if (networkRotation.Value != Vector3.zero) {
-            transform.Rotate(networkRotation.Value);
-        }
+        characterController.SimpleMove(inputPositionVector);
+        transform.Rotate(inputRotationVector, Space.World);
     }
 
     private void ClientVisuals()
     {
-        switch(networkPlayerAnimationState.Value) {
+        switch (networkPlayerAnimationState.Value)
+        {
             case PlayerAnimationState.Idle:
                 animator.SetFloat("Walk", 0f);
-            break;
+                break;
             case PlayerAnimationState.Walk:
                 animator.SetFloat("Walk", 1f);
-            break;
+                break;
+            case PlayerAnimationState.Run:
+                animator.SetFloat("Walk", 2f);
+                break;
             case PlayerAnimationState.ReverseWalk:
                 animator.SetFloat("Walk", -1f);
-            break;
+                break;
         }
     }
 
     [ServerRpc]
-    public void UpdateClientPositionServerRpc(Vector3 newPosition, Vector3 newRotation)
+    public void UpdatePlayerAnimationStateServerRpc(PlayerAnimationState newPlayerAnimationState)
     {
-        networkPosition.Value = newPosition;
-        networkRotation.Value = newRotation;
-    }
-
-    [ServerRpc]
-    public void UpdatePlayerAnimationStateServerRpc(PlayerAnimationState newPlayerAnimationState) {
         networkPlayerAnimationState.Value = newPlayerAnimationState;
     }
 }

@@ -20,6 +20,9 @@ public class SpawnManager : NetworkSingleton<SpawnManager>
 
     private void Awake() {
         //Initialize pool
+        NetworkManager.Singleton.OnServerStarted += () => {
+            NetworkObjectPool.Instance.TriggerInitializePool();
+        };
     }
 
     public void SpawnBalls() {
